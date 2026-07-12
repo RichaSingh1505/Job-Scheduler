@@ -1,0 +1,14 @@
+{
+  "name": "job-scheduler-cron-promoter",
+  "version": "1.0.0",
+  "description": "Promotes due recurring/cron scheduled_jobs definitions into concrete job rows.",
+  "main": "src/scheduler.js",
+  "scripts": {
+    "start": "node src/scheduler.js"
+  },
+  "dependencies": {
+    "cron-parser": "^4.9.0",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.0"
+  }
+}

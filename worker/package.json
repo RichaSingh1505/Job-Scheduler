@@ -1,0 +1,15 @@
+{
+  "name": "job-scheduler-worker",
+  "version": "1.0.0",
+  "description": "Polls queues, atomically claims jobs, executes them concurrently, sends heartbeats.",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.0",
+    "winston": "^3.14.2"
+  }
+}
