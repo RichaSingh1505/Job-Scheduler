@@ -140,173 +140,152 @@ Relay is split into **four independently deployable services** that share only t
 **ER Diagram**
 <img width="1668" height="822" alt="image" src="https://github.com/user-attachments/assets/9568410e-758c-41af-9f72-7cd44aff79ca" />
 
-# API Documentation
-## Base URL
-```text
-http://localhost:4000/api
-```
+# Verified. Here's the corrected version, matching the zip exactly:
 
-## Authentication
+**API Documentation**
+Base URL
+http://localhost:4000/api
+Authentication
 All API routes require a JWT token in the request header except:
 
-- `POST /auth/register`
-- `POST /auth/login`
+POST /auth/register
+POST /auth/login
 
-### Header
-
-```http
+Header
 Authorization: Bearer <token>
-```
-
----
-
-# Authentication APIs
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/auth/register` | Create an organization and owner user. Returns `{ token, user }`. |
-| POST | `/auth/login` | Log in and receive `{ token, user }`. |
-| GET | `/auth/me` | Returns the currently authenticated user. |
-
-# Project APIs
-| Method | Endpoint | Role | Description |
-|---------|----------|------|-------------|
-| GET | `/projects` | Any | List all projects in your organization. |
-| POST | `/projects` | Admin | Create a new project (automatically generates an API key). |
-| GET | `/projects/:id` | Any | Get details of a specific project. |
-| PATCH | `/projects/:id` | Admin | Update project name or description. |
-| DELETE | `/projects/:id` | Owner | Delete a project (also deletes its queues and jobs). |
-
-# Queue APIs
-| Method | Endpoint | Role | Description |
-|---------|----------|------|-------------|
-| GET | `/queues/project/:projectId` | Any | List all queues in a project with live counts. |
-| POST | `/queues/project/:projectId` | Member | Create a queue. |
-| GET | `/queues/:id` | Any | Get queue details. |
-| PATCH | `/queues/:id` | Member | Update concurrency, priority, and retry settings. |
-| DELETE | `/queues/:id` | Admin | Delete a queue (also deletes its jobs). |
-| POST | `/queues/:id/pause` | Member | Pause workers from claiming jobs in this queue. |
-| POST | `/queues/:id/resume` | Member | Resume workers for this queue. |
-| GET | `/queues/:id/stats` | Any | Get live job counts and completions from the last hour. |
-
-# Jobs, Workers, Dead Letter Queue & Webhooks
-Detailed request and response examples for the following are available in:
-
-```text
-docs/api-documentation.md
-```
-
-This includes:
-
-- Job creation
-- Job status transitions
-- Worker heartbeats
-- Dead Letter Queue retry/discard actions
-
-# Trying It End-to-End
+Authentication APIs
+Method: POST — Endpoint: /auth/register — Description: Create an organization and owner user. Returns { token, user }.
+Method: POST — Endpoint: /auth/login — Description: Log in and receive { token, user }.
+Method: GET — Endpoint: /auth/me — Description: Returns the currently authenticated user.
+Project APIs
+Method: GET — Endpoint: /projects — Role: Any — Description: List all projects in your organization.
+Method: POST — Endpoint: /projects — Role: Admin — Description: Create a new project (automatically generates an API key).
+Method: GET — Endpoint: /projects/:id — Role: Any — Description: Get details of a specific project.
+Method: PATCH — Endpoint: /projects/:id — Role: Admin — Description: Update project name or description.
+Method: DELETE — Endpoint: /projects/:id — Role: Owner — Description: Delete a project (also deletes its queues and jobs).
+Queue APIs
+Method: GET — Endpoint: /queues/project/:projectId — Role: Any — Description: List all queues in a project with live counts.
+Method: POST — Endpoint: /queues/project/:projectId — Role: Member — Description: Create a queue.
+Method: GET — Endpoint: /queues/:id — Role: Any — Description: Get queue details.
+Method: PATCH — Endpoint: /queues/:id — Role: Member — Description: Update concurrency, priority, and retry settings.
+Method: DELETE — Endpoint: /queues/:id — Role: Admin — Description: Delete a queue (also deletes its jobs).
+Method: POST — Endpoint: /queues/:id/pause — Role: Member — Description: Pause workers from claiming jobs in this queue.
+Method: POST — Endpoint: /queues/:id/resume — Role: Member — Description: Resume workers for this queue.
+Method: GET — Endpoint: /queues/:id/stats — Role: Any — Description: Get live job counts and completions from the last hour.
+Job APIs
+Method: POST — Endpoint: /queues/:queueId/jobs — Role: Member — Description: Create a job (immediate, delayed, or scheduled).
+Method: POST — Endpoint: /queues/:queueId/jobs/batch — Role: Member — Description: Create many jobs atomically under one batchId.
+Method: GET — Endpoint: /jobs — Role: Any — Description: List jobs. Query: queueId, status, jobType, batchId, page, pageSize.
+Method: GET — Endpoint: /jobs/:id — Role: Any — Description: Get one job.
+Method: GET — Endpoint: /jobs/:id/executions — Role: Any — Description: Full attempt history.
+Method: GET — Endpoint: /jobs/:id/logs — Role: Any — Description: Structured log lines.
+Method: GET — Endpoint: /jobs/:id/dependencies — Role: Any — Description: Workflow dependencies and their current status.
+Method: POST — Endpoint: /jobs/:id/retry — Role: Member — Description: Manually retry a failed or dead_letter job (sets status back to queued).
+Method: POST — Endpoint: /jobs/:id/cancel — Role: Member — Description: Cancel a queued, scheduled, or retrying job.
+Job creation example (POST /queues/:queueId/jobs):
+{
+"jobType": "send_email",
+"payload": { "to": "user@x.com" },
+"priority": 5,
+"runAt": "2026-07-13T09:00:00Z",
+"dependsOn": [101, 102]
+}
+Omit runAt for an immediate job (status becomes queued right away). Pass a future timestamp for a delayed/scheduled job (status starts as scheduled). dependsOn holds the job from being claimed until every listed job id reaches status completed.
+Job status transitions (as implemented by the worker):
+queued/scheduled → claimed → running → completed
+running → failed → retrying (if attempts remain, with a backoff delay) → claimed again directly once due → running → completed or failed again
+running → failed → dead_letter (once attempt_count reaches max_attempts)
+queued/scheduled/retrying → cancelled (manual, via POST /jobs/:id/cancel)
+Note: a retrying job is claimed straight from the retrying status once its run_at delay elapses — it does not pass back through queued. Manually retrying a dead_letter or failed job via POST /jobs/:id/retry does explicitly reset it to queued.
+The claim query also requires: the queue is not paused, the queue's concurrency_limit isn't already met by jobs in claimed/running, and no dependency is still incomplete.
+Worker APIs
+Method: GET — Endpoint: /workers — Description: List all workers cluster-wide with live status (auto-marks stale ones offline).
+Method: GET — Endpoint: /workers/:id — Description: One worker plus its recent heartbeat history.
+Worker heartbeats record active_jobs, cpu_load, and memory_mb on every ping, powering the live load view on the Workers page.
+Dead Letter Queue
+Method: GET — Endpoint: /dead-letter — Role: Any — Description: List permanently-failed jobs. Query: queueId, page, pageSize.
+Method: POST — Endpoint: /dead-letter/:jobId/requeue — Role: Member — Description: Send the job back to queued and clear its DLQ record.
+A job moves here once attempt_count reaches max_attempts. Each row includes ai_summary — a short, LLM-generated plain-English explanation of the failure, populated on a best-effort basis when the worker fleet has ANTHROPIC_API_KEY configured (never blocks the DLQ write if it fails).
+Webhooks
+Method: POST — Endpoint: /webhooks/:apiKey/trigger — Auth: Project api_key (no login) — Description: Create a job from an external event source.
+Example:
+{
+"queueName": "email-notifications",
+"jobType": "send_email",
+"payload": { "to": "x@y.com" }
+}
+:apiKey is the project's api_key (visible on GET /projects/:id). Lets external systems — a Stripe webhook, an internal event bus, an outside cron — create jobs without a user login.
+Trying It End-to-End
 Follow these steps to test the application:
 
-### 1. Register
-
+Register
 Create an organization and owner account.
-
-```
 POST /auth/register
-```
-
----
-
-### 2. Create a Project
-
+Create a Project
 After logging in, create a project.
-
----
-
-### 3. Create a Queue
-
+Create a Queue
 Inside the project, create a queue.
-
 Example:
 
-- Queue Name: `demo`
-- Concurrency: `3`
-- Retry Strategy: `Exponential`
 
----
+Queue Name: demo
+Concurrency: 3
+Retry Strategy: Exponential
 
-### 4. Create Jobs
 
-Open the queue and click **+ New Job**.
+Create Jobs
+Open the queue and click + New Job.
 
-#### Sleep Job
-
-```json
+Sleep Job
 {
-  "ms": 3000
+"ms": 3000
 }
-```
-
 Job Type:
-
-```
 sleep
-```
-
 Expected flow:
-
-```
 Queued
-    ↓
+↓
 Claimed
-    ↓
+↓
 Running
-    ↓
+↓
 Completed
-```
-
----
-
-#### Flaky Demo Job
-
-```json
+Flaky Demo Job
 {
-  "failureRate": 0.8
+"failureRate": 0.8
 }
-```
-
 Job Type:
-
-```
 flaky_demo
-```
-
 Expected flow:
 
-- Retries automatically
-- Eventually moves to the Dead Letter Queue if retries are exhausted
+Retries automatically
+Eventually moves to the Dead Letter Queue if retries are exhausted
 
-### 5. Monitor Workers
-Visit the **Workers** page to observe:
 
-- Live heartbeats
-- Active workers
-- Claimed jobs
+Monitor Workers
+Visit the Workers page to observe:
 
-### 6. View Dashboard
-The **Overview** page displays:
 
-- Throughput chart
-- Queue statistics
-- Job metrics
+Live heartbeats
+Active workers
+Claimed jobs
 
-### 7. Test Recurring Jobs
+
+View Dashboard
+The Overview page displays:
+
+
+Throughput chart
+Queue statistics
+Job metrics
+
+
+Test Recurring Jobs
 Create a recurring job using the cron expression:
+*/2 * * * *
+The scheduler will automatically create a new job every 2 minutes.
 
-The scheduler will automatically create a new job every **2 minutes**.
-
-# Running Tests
+Running Tests
 cd backend
-
 npm install
-
 npm test
-```
