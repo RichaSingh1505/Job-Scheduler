@@ -76,8 +76,11 @@ mysql -u root -p < database/schema.sql
 
 ## 4. Manual Setup — Backend
 cd backend
+
 cp .env.example .env      # edit DB_* and JWT_SECRET
+
 npm install
+
 npm run dev
 
 Runs on **http://localhost:4000**
@@ -98,15 +101,22 @@ Run this in multiple terminals to see distributed claiming in action.
 
 ## 6. Manual Setup — Scheduler
 cd scheduler
+
 cp .env.example .env
+
 npm install
+
 npm start
 
 ## 7. Manual Setup — Frontend
 cd frontend
+
 cp .env.example .env      # VITE_API_URL=http://localhost:4000
+
 npm install
+
 npm run dev
+
 Open: http://localhost:5173
 
 # Architecture Diagram
@@ -119,3 +129,180 @@ Relay is split into **four independently deployable services** that share only t
 | **Worker** | Polls, claims, executes jobs, applies retry policy, sends heartbeats | Horizontally, any number of hosts |
 | **Scheduler** | Promotes due cron definitions into job rows | 1 replica by default, safe to scale |
 | **Frontend** | Operator dashboard | Static build via Nginx/CDN |
+
+**ER Diagram**
+
+# API Documentation
+## Base URL
+```text
+http://localhost:4000/api
+```
+
+## Authentication
+All API routes require a JWT token in the request header except:
+
+- `POST /auth/register`
+- `POST /auth/login`
+
+### Header
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+# Authentication APIs
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/auth/register` | Create an organization and owner user. Returns `{ token, user }`. |
+| POST | `/auth/login` | Log in and receive `{ token, user }`. |
+| GET | `/auth/me` | Returns the currently authenticated user. |
+
+# Project APIs
+| Method | Endpoint | Role | Description |
+|---------|----------|------|-------------|
+| GET | `/projects` | Any | List all projects in your organization. |
+| POST | `/projects` | Admin | Create a new project (automatically generates an API key). |
+| GET | `/projects/:id` | Any | Get details of a specific project. |
+| PATCH | `/projects/:id` | Admin | Update project name or description. |
+| DELETE | `/projects/:id` | Owner | Delete a project (also deletes its queues and jobs). |
+
+# Queue APIs
+| Method | Endpoint | Role | Description |
+|---------|----------|------|-------------|
+| GET | `/queues/project/:projectId` | Any | List all queues in a project with live counts. |
+| POST | `/queues/project/:projectId` | Member | Create a queue. |
+| GET | `/queues/:id` | Any | Get queue details. |
+| PATCH | `/queues/:id` | Member | Update concurrency, priority, and retry settings. |
+| DELETE | `/queues/:id` | Admin | Delete a queue (also deletes its jobs). |
+| POST | `/queues/:id/pause` | Member | Pause workers from claiming jobs in this queue. |
+| POST | `/queues/:id/resume` | Member | Resume workers for this queue. |
+| GET | `/queues/:id/stats` | Any | Get live job counts and completions from the last hour. |
+
+
+# Jobs, Workers, Dead Letter Queue & Webhooks
+Detailed request and response examples for the following are available in:
+
+```text
+docs/api-documentation.md
+```
+
+This includes:
+
+- Job creation
+- Job status transitions
+- Worker heartbeats
+- Dead Letter Queue retry/discard actions
+
+# Trying It End-to-End
+Follow these steps to test the application:
+
+### 1. Register
+
+Create an organization and owner account.
+
+```
+POST /auth/register
+```
+
+---
+
+### 2. Create a Project
+
+After logging in, create a project.
+
+---
+
+### 3. Create a Queue
+
+Inside the project, create a queue.
+
+Example:
+
+- Queue Name: `demo`
+- Concurrency: `3`
+- Retry Strategy: `Exponential`
+
+---
+
+### 4. Create Jobs
+
+Open the queue and click **+ New Job**.
+
+#### Sleep Job
+
+```json
+{
+  "ms": 3000
+}
+```
+
+Job Type:
+
+```
+sleep
+```
+
+Expected flow:
+
+```
+Queued
+    ↓
+Claimed
+    ↓
+Running
+    ↓
+Completed
+```
+
+---
+
+#### Flaky Demo Job
+
+```json
+{
+  "failureRate": 0.8
+}
+```
+
+Job Type:
+
+```
+flaky_demo
+```
+
+Expected flow:
+
+- Retries automatically
+- Eventually moves to the Dead Letter Queue if retries are exhausted
+
+### 5. Monitor Workers
+Visit the **Workers** page to observe:
+
+- Live heartbeats
+- Active workers
+- Claimed jobs
+
+### 6. View Dashboard
+The **Overview** page displays:
+
+- Throughput chart
+- Queue statistics
+- Job metrics
+
+### 7. Test Recurring Jobs
+Create a recurring job using the cron expression:
+
+*/2 * * * *
+```
+
+The scheduler will automatically create a new job every **2 minutes**.
+
+# Running Tests
+cd backend
+
+npm install
+
+npm test
+```
