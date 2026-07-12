@@ -26,36 +26,7 @@ A production-shaped distributed job scheduling platform built with **Node.js + E
 | **Deployment** | Docker, Docker Compose, Nginx |
 
 # Project Structure
-job-scheduler/
-│
-├── database/
-│   └── schema.sql              # MySQL schema (source of truth)
-│
-├── backend/
-│   └── src/
-│       ├── controllers/        # auth, projects, queues, jobs, workers, DLQ, metrics, webhooks
-│       ├── models/             # SQL access layer, one per entity
-│       ├── middleware/         # auth, error handling, rate limiting
-│       ├── routes/             # Express routers
-│       ├── services/           # Retry strategy logic
-│       └── sockets/            # Socket.IO event fan-out
-│
-├── worker/
-│   └── src/
-│       ├── handlers/           # Job-type registry (noop, sleep, http_request, flaky_demo)
-│       └── services/           # Optional AI failure-summary generator
-│
-├── scheduler/
-│   └── src/
-│       └── scheduler.js        # Promotes due cron definitions into jobs
-│
-├── frontend/
-│   └── src/
-│       ├── pages/              # Dashboard, Projects, QueueDetail, JobExplorer, Workers, DeadLetter
-│       ├── components/         # Layout, StatusBadge, shared UI
-│       └── context/            # Auth context
-│
-└── docs/                       # Architecture, ER diagram, API docs, design decisions
+<img width="915" height="607" alt="image" src="https://github.com/user-attachments/assets/ea955f00-2904-418b-9118-e78bcacae39a" />
 
 # How the Scheduling Logic Works
 ## Job Lifecycle
