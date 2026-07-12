@@ -115,16 +115,12 @@ Health check:
 GET /health
 
 ## 5. Manual Setup — Worker
-
 cd worker
 cp .env.example .env
 npm install
 npm start
-```
 
 Run this in multiple terminals to see distributed claiming in action.
-
----
 
 ## 6. Manual Setup — Scheduler
 cd scheduler
