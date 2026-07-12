@@ -122,6 +122,7 @@ Open: http://localhost:5173
 # Architecture Diagram
 
 Relay is split into **four independently deployable services** that share only the **MySQL database** as their integration point.
+<img width="611" height="741" alt="image" src="https://github.com/user-attachments/assets/4f7a9a52-f1aa-4d5f-8dde-2912b95e97ec" />
 
 | Service | Responsibility | Scales By |
 |----------|---------------|-----------|
