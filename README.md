@@ -119,6 +119,12 @@ npm run dev
 
 Open: http://localhost:5173
 
+**Screens Overview**
+<img width="1920" height="973" alt="image" src="https://github.com/user-attachments/assets/f33f14aa-7491-47ca-945a-13cc61d1942b" />
+<img width="1918" height="966" alt="image" src="https://github.com/user-attachments/assets/10e70b85-cdfc-4098-95b3-e45cacbae21b" />
+<img width="1920" height="969" alt="image" src="https://github.com/user-attachments/assets/b2891c0b-47c0-4839-b7f6-5f5fec3b7d61" />
+<img width="1920" height="968" alt="image" src="https://github.com/user-attachments/assets/668c687f-abb3-4b90-8307-1c7b610fbc52" />
+
 # Architecture Diagram
 
 Relay is split into **four independently deployable services** that share only the **MySQL database** as their integration point.
@@ -132,6 +138,7 @@ Relay is split into **four independently deployable services** that share only t
 | **Frontend** | Operator dashboard | Static build via Nginx/CDN |
 
 **ER Diagram**
+<img width="1668" height="822" alt="image" src="https://github.com/user-attachments/assets/9568410e-758c-41af-9f72-7cd44aff79ca" />
 
 # API Documentation
 ## Base URL
@@ -180,7 +187,6 @@ Authorization: Bearer <token>
 | POST | `/queues/:id/pause` | Member | Pause workers from claiming jobs in this queue. |
 | POST | `/queues/:id/resume` | Member | Resume workers for this queue. |
 | GET | `/queues/:id/stats` | Any | Get live job counts and completions from the last hour. |
-
 
 # Jobs, Workers, Dead Letter Queue & Webhooks
 Detailed request and response examples for the following are available in:
