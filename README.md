@@ -301,9 +301,6 @@ The **Overview** page displays:
 ### 7. Test Recurring Jobs
 Create a recurring job using the cron expression:
 
-*/2 * * * *
-```
-
 The scheduler will automatically create a new job every **2 minutes**.
 
 # Running Tests
